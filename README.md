@@ -12,47 +12,50 @@ Green design from the Figma file; covers every role in the project brief.
 
 PowerShell says "running scripts is disabled"? Run once: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
 
-## Sign in
+## Sign-in pages
 
-The sign-in page has a **Demo accounts** box. Password for all: `Demo@1234`.
+| Who | Sign-in page | After sign-in |
+|---|---|---|
+| Applicants and students | `/login` | `/dashboard` |
+| ICT Admin, Admission Officer, Registrar, PG School Staff | `/admin/login` (**Staff sign-in**, linked in the footer and under the student sign-in) | `/admin` |
 
-| Role | Email |
-|---|---|
-| ICT Administrator | ict@bitly.edu.ng |
-| Admission Officer | admissions@bitly.edu.ng |
-| Registrar | registrar@bitly.edu.ng |
-| PG School Staff (limited permissions) | pgstaff@bitly.edu.ng |
-| Applicant (paid, pending decision) | kwame.mensah@demo.com |
-| Student (admitted, 76% fees paid) | tolu.adeyemi@demo.com |
+Each page only accepts its own kind of account: a staff account is turned away from `/login` and a student
+account from `/admin/login`. Opening any `/admin` page while signed out goes to the staff sign-in.
+There is no staff sign-up; staff accounts are created by ICT / the backend.
 
-New applicants sign up with **Start application** (uses the real backend). Returning students use
-**Register for the session**.
+## Accounts and roles
 
-## Demo walkthrough (shows every rule in the brief)
+- **Applicants** sign up on the portal (**Start application**) — this creates their account on the backend.
+- **Returning students** use **Register for the session** — also creates a backend account, then an activation email is sent.
+- **Staff** (ICT Administrator, Admission Officer, Registrar, PG School Staff) sign in with accounts the
+  backend team creates with that role. The role comes from `/api/auth/login/`. The ICT Administrator can
+  also give a staff role to an email on **Users & permissions**, and choose what each PG School Staff member can do.
+- The portal starts with no applicants, students or payments — only the academic setup
+  (colleges, departments, programmes, fees, courses), which the ICT Administrator can edit.
 
-1. **Applicant:** sign up → sign in → Application tab → pay the ₦25,000 admission form fee (test card is pre-filled) → submit the application.
-2. **Admission Officer** (or Registrar): Applications → open it → **Grant admission**. Grant is disabled while the form fee is unpaid.
-3. **Applicant again:** now a Student "awaiting activation" → **Messages** → **Activate my account** → gets a matric number.
-4. **Payments:** pay at least **70%** of school fees → **Course registration** unlocks → courses filtered by department, level, semester and session → register → **print the slip**.
-5. **Registrar:** revoke an admission → that student can no longer sign in.
-6. **ICT Admin:** upload courses from CSV/Excel (preview shows errors and duplicates before import), manage colleges/departments/programmes, fee structure, staff users and PG Staff permissions, email log.
-7. **Returning student:** the 14-field form → activation email → activate → pay fees → register.
+## The flow
 
-**Reset demo data** (bottom of the admin sidebar) restores the sample data.
+1. **Applicant:** sign up → sign in → pay the admission form fee → submit the application.
+2. **Admission Officer / Registrar:** Applications → open → **Grant admission** (disabled until the form fee is verified) or **Revoke**.
+3. **Admitted student:** activation email → activate → matric number assigned.
+4. **School fees:** at least **70%** verified → **Course registration** unlocks → courses by department, level, semester and session → **printable slip**.
+5. **Revoked students** can no longer sign in.
+6. **ICT Admin:** CSV/Excel course upload with validation and duplicate checks, colleges/departments/programmes, fee structure, users & permissions, email log.
 
 ## What talks to the backend
 
 | Part | Where the data lives now |
 |---|---|
-| Applicant sign-up, sign-in, sign-out, token refresh | **Real backend** (`/api/auth/*`) |
-| Everything else (applications, payments, courses, users, emails…) | `src/api/services.js` → saved in the browser (localStorage) |
+| Sign-up, sign-in, sign-out, roles, token refresh (all users) | **Backend** (`/api/auth/*`) |
+| Applications, payments, courses, registrations, permissions, emails | `src/api/services.js` (browser storage until the backend adds these endpoints) |
 
 All pages call functions in `src/api/services.js`. When the backend group adds an endpoint, replace that
 function's body with a `request()` call from `src/api/client.js`; pages don't change. Business rules
 (form fee before review, 70% rule, activation before registration, revoked = locked out, duplicate checks)
 are enforced there and **must also be enforced by the backend**.
 
-Set `VITE_AUTH_MODE=demo` in `.env` to run with no backend at all (e.g. presenting offline).
+**Payments:** the card form records the payment as verified. For live use, the backend must confirm each
+payment with the gateway (e.g. Korapay/Paystack webhook) before marking it verified.
 
 ## Email notifications
 
@@ -67,7 +70,7 @@ the student's **Messages** tab. To also really send them, create an EmailJS temp
 - The 70% rule applies to course registration for the whole session.
 - Activation is required before course registration (applicants can sign in to apply before admission).
 - PG School Staff get only the permissions the ICT Admin ticks for them.
-- 2 colleges × 3 departments, 5 programmes, levels 700/800, max 24 units per semester (all editable in the seed in `src/api/db.js`).
+- Initial setup: 2 colleges × 3 departments, 5 programmes, levels 700/800, max 24 units per semester (editable by the ICT Admin; starting values in `src/api/db.js`).
 
 ## Folder map
 

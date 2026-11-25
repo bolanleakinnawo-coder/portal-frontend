@@ -4,11 +4,12 @@ import { CardIcon, CheckIcon, LockIcon } from './Icons';
 import { makePayment, naira } from '../api/services';
 
 /**
- * Simulated payment gateway (test mode). A successful card payment is verified straight away,
- * which is what a real gateway callback (e.g. Paystack/Korapay webhook) would do.
+ * Card payment form. On success the payment is recorded as verified.
+ * In production the backend must confirm the payment with the gateway (e.g. Korapay/Paystack webhook)
+ * before marking it verified — see makePayment() in api/services.js.
  */
 export function PaymentModal({ user, purpose, amount, title, onClose, onPaid }) {
-  const [card, setCard] = useState({ number: '4084 0840 8408 4081', expiry: '12/30', cvv: '408' });
+  const [card, setCard] = useState({ number: '', expiry: '', cvv: '' });
   const [state, setState] = useState('form'); // form | processing | done
   const [error, setError] = useState('');
   const [payment, setPayment] = useState(null);
@@ -52,19 +53,18 @@ export function PaymentModal({ user, purpose, amount, title, onClose, onPaid }) 
               <p className="pay-amount">{naira(amount)}</p>
             </div>
           </div>
-          <div className="test-note">Test mode — no real money is charged.</div>
           <div className="field">
             <label htmlFor="card-number">Card number</label>
-            <input id="card-number" inputMode="numeric" value={card.number} onChange={(e) => setCard({ ...card, number: e.target.value })} />
+            <input id="card-number" inputMode="numeric" autoComplete="cc-number" placeholder="0000 0000 0000 0000" value={card.number} onChange={(e) => setCard({ ...card, number: e.target.value })} />
           </div>
           <div className="two-col">
             <div className="field">
               <label htmlFor="card-expiry">Expiry (MM/YY)</label>
-              <input id="card-expiry" value={card.expiry} onChange={(e) => setCard({ ...card, expiry: e.target.value })} />
+              <input id="card-expiry" autoComplete="cc-exp" placeholder="MM/YY" value={card.expiry} onChange={(e) => setCard({ ...card, expiry: e.target.value })} />
             </div>
             <div className="field">
               <label htmlFor="card-cvv">CVV</label>
-              <input id="card-cvv" inputMode="numeric" maxLength={4} value={card.cvv} onChange={(e) => setCard({ ...card, cvv: e.target.value })} />
+              <input id="card-cvv" inputMode="numeric" autoComplete="cc-csc" placeholder="123" maxLength={4} value={card.cvv} onChange={(e) => setCard({ ...card, cvv: e.target.value })} />
             </div>
           </div>
           {error && <div className="alert alert-error">{error}</div>}

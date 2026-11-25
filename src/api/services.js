@@ -33,17 +33,23 @@ export function findUserByEmail(email) {
 }
 export function userById(id) { return db().users.find((u) => u.id === Number(id)); }
 
-/** Create or update the local copy of a user who logged in through the real backend. */
+const STAFF = ['ICT_ADMIN', 'ADMISSION_OFFICER', 'REGISTRAR', 'PG_STAFF'];
+
+/** Create or update the portal record for a user who signed in through the backend. */
 export function upsertBackendUser(apiUser) {
   const d = db();
   let u = findUserByEmail(apiUser.email);
   if (!u) {
     u = {
       id: nextId(d.users), email: apiUser.email, surname: apiUser.last_name || '', first_name: apiUser.first_name || '',
-      other_name: '', gender: '', phone: '', role: apiUser.role === 'STUDENT' ? 'PG_APPLICANT' : apiUser.role,
+      other_name: '', gender: '', phone: '', role: STAFF.includes(apiUser.role) ? apiUser.role : 'PG_APPLICANT',
       status: 'active', source: 'backend', created_at: stamp(),
     };
     d.users.push(u);
+    save();
+  } else if (STAFF.includes(apiUser.role) && u.role !== apiUser.role && !STAFF.includes(u.role)) {
+    // A staff role set by the backend team takes effect on the next sign-in.
+    u.role = apiUser.role;
     save();
   }
   return u;
@@ -77,17 +83,16 @@ export async function saveStaffUser(data, id) {
   if (id) {
     const u = userById(id);
     const changes = { ...data };
-    if (!changes.password) delete changes.password;
-    else if (changes.password.length < 8) fail('A new password must be at least 8 characters.');
+    delete changes.password;
     Object.assign(u, changes, { permissions: data.role === 'PG_STAFF' ? data.permissions || [] : [] });
     save();
     return u;
   }
-  if (!data.password || data.password.length < 8) fail('Set a temporary password of at least 8 characters.');
-  const u = { id: nextId(d.users), status: 'active', source: 'demo', created_at: stamp(), other_name: '', gender: '', phone: '', ...data, permissions: data.role === 'PG_STAFF' ? data.permissions || [] : [] };
+  delete data.password;
+  const u = { id: nextId(d.users), status: 'active', source: 'portal', created_at: stamp(), other_name: '', gender: '', phone: '', ...data, permissions: data.role === 'PG_STAFF' ? data.permissions || [] : [] };
   d.users.push(u);
   save();
-  notifyByEmail({ to: u.email, name: u.first_name, subject: 'Your PG School staff account', body: `An account has been created for you with the role ${u.role}. Sign in with the temporary password provided by ICT.` });
+  notifyByEmail({ to: u.email, name: u.first_name, subject: 'Your PG School staff account', body: `You have been given the role ${u.role} on the PG School portal. Sign in with your portal account to start.` });
   return u;
 }
 
@@ -121,11 +126,11 @@ export async function registerReturningStudent(form) {
   const idValue = form.id_value.trim().toUpperCase();
   if (form.id_type === 'matric' && d.users.some((u) => (u.matric_number || '').toUpperCase() === idValue)) fail('This matric number is already registered.');
   const u = {
-    id: nextId(d.users), email: form.email.trim(), password: form.password, surname: form.surname.trim(), first_name: form.first_name.trim(),
+    id: nextId(d.users), email: form.email.trim(), surname: form.surname.trim(), first_name: form.first_name.trim(),
     other_name: form.other_name.trim(), gender: form.gender, phone: form.phone.trim(), role: 'STUDENT', status: 'pending_activation',
     matric_number: form.id_type === 'matric' ? idValue : '', application_number: form.id_type === 'application' ? idValue : '',
     college: Number(form.college), department: Number(form.department), programme: Number(form.programme), level: form.level,
-    session: form.session, returning: true, source: 'demo', created_at: stamp(),
+    session: form.session, returning: true, source: 'backend', created_at: stamp(),
   };
   d.users.push(u);
   save();

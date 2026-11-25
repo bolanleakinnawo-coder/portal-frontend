@@ -114,7 +114,10 @@ export default function Home() {
             <p className="footer-title">Bitly University · Postgraduate School</p>
             <p className="footer-sub">Secure admission and course registration services.</p>
           </div>
-          <a href="mailto:pgsupport@university.edu">pgsupport@university.edu</a>
+          <div className="footer-links">
+            <a href="mailto:pgsupport@university.edu">pgsupport@university.edu</a>
+            <Link to="/admin/login" className="footer-staff">Staff sign-in</Link>
+          </div>
         </div>
       </footer>
     </div>

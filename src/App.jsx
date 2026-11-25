@@ -70,12 +70,14 @@ export default function App() {
   if (path === '/activate') return <Activate />;
   if (loading) return <Loading />;
 
-  if (['/login', '/register', '/returning'].includes(path)) {
+  if (['/login', '/admin/login', '/register', '/returning'].includes(path)) {
     if (user) return <Redirect to={homeFor(user)} />;
+    if (path === '/admin/login') return <Login staff />;
     return path === '/login' ? <Login /> : path === '/register' ? <Register /> : <Returning />;
   }
 
-  if (!user) return <Redirect to="/login" />;
+  // Not signed in: staff pages go to the staff sign-in, everything else to the student sign-in.
+  if (!user) return <Redirect to={path.startsWith('/admin') ? '/admin/login' : '/login'} />;
 
   const slip = matchPath('/dashboard/slip/:id', path) || matchPath('/slip/:id', path);
   if (slip) return <Slip id={slip.id} />;

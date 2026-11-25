@@ -3,7 +3,6 @@ import { Link, useRouter } from '../lib/router';
 import { useAuth } from '../context/AuthContext';
 import { CapIcon, MenuIcon } from './Icons';
 import { ADMIN_NAV, ROLE_LABELS, can } from '../config/roles';
-import { reset } from '../api/db';
 
 export function AdminLayout({ children }) {
   const { user, logout } = useAuth();
@@ -31,11 +30,6 @@ export function AdminLayout({ children }) {
             </div>
           ))}
         </nav>
-        <div className="side-foot">
-          <button className="btn-text small" onClick={() => { if (window.confirm('Reset all demo data back to the sample data?')) { reset(); window.location.href = '/login'; } }}>
-            Reset demo data
-          </button>
-        </div>
       </aside>
 
       <div className="admin-main">
@@ -48,7 +42,7 @@ export function AdminLayout({ children }) {
               <span>{ROLE_LABELS[user.role]}</span>
             </div>
             <span className="avatar">{initials}</span>
-            <button className="btn-text" onClick={async () => { await logout(); navigate('/login'); }}>Sign out</button>
+            <button className="btn-text" onClick={async () => { await logout(); navigate('/admin/login'); }}>Sign out</button>
           </div>
         </header>
         <main className="admin-content">{children}</main>

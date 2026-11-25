@@ -1,6 +1,6 @@
 // Email notifications.
 // Every email is recorded in the Email Log (visible to staff, and to students on their own page),
-// so activation links work in a demo even without a mail service.
+// so nothing is lost if the mail service is down.
 // If EmailJS keys are set in .env, the email is also really sent.
 import { load, save, nextId, stamp } from './db';
 

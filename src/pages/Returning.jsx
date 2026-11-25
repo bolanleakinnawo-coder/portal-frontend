@@ -5,6 +5,8 @@ import { Field, useLoad } from '../components/ui';
 import { CheckIcon } from '../components/Icons';
 import { rules } from '../lib/validate';
 import { LEVELS, getLookups, programmeLabel, registerReturningStudent } from '../api/services';
+import { registerReturningAccount } from '../api/auth';
+import { backendErrors } from '../lib/validate';
 
 // The 14 fields from the project brief for returning students.
 const EMPTY = {
@@ -64,11 +66,13 @@ export default function Returning() {
     if (Object.keys(found).length) { document.getElementById(Object.keys(found)[0])?.focus(); return; }
     setBusy(true);
     try {
+      await registerReturningAccount(form);
       const u = await registerReturningStudent(form);
       setDone(u);
       window.scrollTo(0, 0);
     } catch (err) {
-      setErrors({ form: err.message });
+      const mapped = backendErrors(err.data);
+      setErrors(Object.keys(mapped).length ? { ...mapped, form: mapped.form || (mapped.email ? '' : err.message) } : { form: err.message });
     } finally {
       setBusy(false);
     }
@@ -82,7 +86,7 @@ export default function Returning() {
           <span className="pay-check big"><CheckIcon width={34} height={34} /></span>
           <h1 className="auth-title">Check your email</h1>
           <p className="sub">We sent an activation link to <strong>{done.email}</strong>. You must activate your account before you can access course registration.</p>
-          <div className="alert alert-warn mt">Demo: sign in with your email and password, then open <strong>Messages</strong> to find the activation link.</div>
+          <p className="sub mt">You can also sign in and open <strong>Messages</strong> to find the link.</p>
           <Link to="/login" className="btn btn-primary btn-lg btn-block">Go to sign in</Link>
         </div>
       </div>

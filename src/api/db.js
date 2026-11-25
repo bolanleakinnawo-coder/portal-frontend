@@ -1,13 +1,13 @@
-// Local data store for everything the backend doesn't have endpoints for yet.
-// Saved in this browser (localStorage), so every role sees the same data in the same browser —
-// an applicant can apply, then an Admission Officer can log in and grant admission.
+// Data store for the parts of the portal that the backend does not expose yet
+// (applications, payments, courses, registrations, emails, staff permissions).
+// Starts with the university's academic setup (colleges, departments, programmes, fees, courses),
+// which the ICT Administrator can edit. People, applications and payments start empty.
 //
-// When the backend adds endpoints, replace the functions in services.js with API calls.
+// When the backend adds these endpoints, replace the functions in services.js with API calls.
 
-const KEY = 'bitly.pg.db.v1';
+const KEY = 'bitly.pg.db.v2';
 
 const now = () => new Date().toISOString();
-const daysAgo = (d) => new Date(Date.now() - d * 86400000).toISOString();
 
 function seed() {
   const colleges = [
@@ -55,39 +55,10 @@ function seed() {
     c(14, 'STA 701', 'Advanced Statistical Inference', 5, '700', 'first'),
     c(15, 'STA 714', 'Multivariate Analysis', 5, '700', 'first'),
   ];
-  const staff = (id, email, surname, first_name, role, permissions = []) => ({
-    id, email, password: 'Demo@1234', surname, first_name, other_name: '', gender: '', phone: '',
-    role, status: 'active', permissions, source: 'demo', created_at: daysAgo(60),
-  });
-  const users = [
-    staff(1, 'ict@bitly.edu.ng', 'Ogunleye', 'Bolaji', 'ICT_ADMIN'),
-    staff(2, 'admissions@bitly.edu.ng', 'Nwosu', 'Emeka', 'ADMISSION_OFFICER'),
-    staff(3, 'registrar@bitly.edu.ng', 'Adebayo', 'Folake', 'REGISTRAR'),
-    staff(4, 'pgstaff@bitly.edu.ng', 'Bello', 'Halima', 'PG_STAFF', ['applications.view', 'students.view']),
-    { id: 5, email: 'kwame.mensah@demo.com', password: 'Demo@1234', surname: 'Mensah', first_name: 'Kwame', other_name: '', gender: 'male', phone: '+233240001111', role: 'PG_APPLICANT', status: 'active', source: 'demo', created_at: daysAgo(6) },
-    { id: 6, email: 'tolu.adeyemi@demo.com', password: 'Demo@1234', surname: 'Adeyemi', first_name: 'Tolu', other_name: 'Grace', gender: 'female', phone: '08030002222', role: 'STUDENT', status: 'active', matric_number: 'PG/2026/0001', programme: 1, level: '700', department: 1, college: 1, source: 'demo', created_at: daysAgo(20) },
-    { id: 7, email: 'chiamaka.obi@demo.com', password: 'Demo@1234', surname: 'Obi', first_name: 'Chiamaka', other_name: '', gender: 'female', phone: '08100004444', role: 'PG_APPLICANT', status: 'active', source: 'demo', created_at: daysAgo(3) },
-  ];
-  const app = (id, number, user, programme, extra) => ({
-    id, application_number: number, user, programme, session: '2025/2026', date_of_birth: '1999-01-20',
-    nationality: 'Nigerian', address: '12 Oke-Ilewo Road, Abeokuta, Ogun State', institution: 'University of Lagos',
-    qualification: 'B.Sc. Computer Science', class_of_degree: 'Second Class Upper', year_awarded: 2022,
-    status: 'submitted', decision: 'pending', created_at: daysAgo(5), ...extra,
-  });
-  const applications = [
-    app(1, 'PG-2026-495D025E', 5, 1, { nationality: 'Ghanaian', institution: 'University of Ghana', address: '56 Ring Road, Accra' }),
-    app(2, 'PG-2026-7B5E1F63', 6, 1, { decision: 'admitted', decided_by: 'Folake Adebayo', decided_at: daysAgo(15), created_at: daysAgo(19), institution: 'FUNAAB', class_of_degree: 'First Class' }),
-    app(3, 'PG-2026-C19A77F0', 7, 4, { institution: 'University of Nigeria, Nsukka', qualification: 'B.Sc. Mathematics', created_at: daysAgo(2) }),
-  ];
-  const payments = [
-    { id: 1, reference: 'BTU-AF-102938', user: 5, purpose: 'admission_form', amount: 25000, status: 'verified', session: '2025/2026', channel: 'card', created_at: daysAgo(5) },
-    { id: 2, reference: 'BTU-AF-102811', user: 6, purpose: 'admission_form', amount: 25000, status: 'verified', session: '2025/2026', channel: 'card', created_at: daysAgo(19) },
-    { id: 3, reference: 'BTU-SF-220145', user: 6, purpose: 'school_fees', amount: 280000, status: 'verified', session: '2025/2026', channel: 'card', created_at: daysAgo(12) },
-  ];
   return {
-    colleges, departments, programmes, sessions, fees, courses, users, applications, payments,
+    colleges, departments, programmes, sessions, fees, courses,
     settings: { form_fee: 25000, min_fee_percent: 70 },
-    tokens: [], registrations: [], emails: [],
+    users: [], applications: [], payments: [], tokens: [], registrations: [], emails: [],
   };
 }
 
@@ -113,12 +84,6 @@ export function save() {
   } catch {
     /* storage full or blocked — keep working in memory */
   }
-}
-
-/** Start over with the sample data (used by the "Reset demo data" button). */
-export function reset() {
-  cache = seed();
-  save();
 }
 
 export const nextId = (rows) => rows.reduce((m, r) => Math.max(m, r.id), 0) + 1;

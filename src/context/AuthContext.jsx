@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import * as auth from '../api/auth';
+import { isStaff } from '../config/roles';
 
 const AuthContext = createContext(null);
 
@@ -25,8 +26,17 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('auth:expired', onExpired);
   }, [refresh]);
 
-  const login = useCallback(async (email, password) => {
+  /** portal: 'staff' for /admin/login, 'student' for /login. Accounts can only use their own sign-in page. */
+  const login = useCallback(async (email, password, portal = 'student') => {
     const u = await auth.login(email, password);
+    if (portal === 'staff' && !isStaff(u)) {
+      await auth.logout();
+      throw Object.assign(new Error('This sign-in page is for PG School staff. Applicants and students should use the student sign-in page.'), { status: 403, wrongPortal: 'student' });
+    }
+    if (portal === 'student' && isStaff(u)) {
+      await auth.logout();
+      throw Object.assign(new Error('Staff accounts sign in on the Staff sign-in page.'), { status: 403, wrongPortal: 'staff' });
+    }
     setUser({ ...u });
     return u;
   }, []);

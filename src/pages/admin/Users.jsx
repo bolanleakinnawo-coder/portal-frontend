@@ -5,7 +5,7 @@ import { useLoad, Table, Badge, PageHead, Modal, Field, Toast } from '../../comp
 import { fullName, listUsers, saveStaffUser, setUserStatus, shortDate } from '../../api/services';
 import { PERMISSIONS, ROLE_LABELS, STAFF_ROLES, permissionsFor } from '../../config/roles';
 
-const EMPTY = { surname: '', first_name: '', email: '', phone: '', role: 'PG_STAFF', password: '', permissions: ['applications.view'] };
+const EMPTY = { surname: '', first_name: '', email: '', phone: '', role: 'PG_STAFF', permissions: ['applications.view'] };
 
 export default function Users() {
   const { user: me } = useAuth();
@@ -25,7 +25,7 @@ export default function Users() {
 
   return (
     <AdminLayout>
-      <PageHead title="Users & permissions" sub="Create staff accounts, change roles, and choose exactly what each PG School Staff member can do." actions={<button className="btn btn-primary" onClick={() => setEdit({ ...EMPTY })}>Add staff user</button>} />
+      <PageHead title="Users & permissions" sub="Give staff their roles and choose exactly what each PG School Staff member can do. Staff sign in with their portal account (the email you enter here)." actions={<button className="btn btn-primary" onClick={() => setEdit({ ...EMPTY })}>Add staff user</button>} />
       <div className="toolbar">
         <input className="search" placeholder="Search name, email or matric number" value={f.search} onChange={set('search')} />
         <select value={f.role} onChange={set('role')}><option value="">All roles</option>{Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
@@ -41,7 +41,7 @@ export default function Users() {
           { key: 'created_at', label: 'Created', render: (u) => shortDate(u.created_at) },
           { key: 'act', label: '', render: (u) => (
             <span className="row-actions">
-              {STAFF_ROLES.includes(u.role) && <button className="btn btn-sm btn-outline" onClick={() => setEdit({ ...u, password: '' })}>Edit</button>}
+              {STAFF_ROLES.includes(u.role) && <button className="btn btn-sm btn-outline" onClick={() => setEdit({ ...u })}>Edit</button>}
               {u.id !== me.id && ['active', 'suspended'].includes(u.status) && <button className="btn btn-sm btn-outline" onClick={() => toggle(u)}>{u.status === 'suspended' ? 'Reactivate' : 'Suspend'}</button>}
             </span>
           ) },
@@ -62,8 +62,8 @@ function UserForm({ item, isSelf, onClose, onSaved }) {
 
   async function save() {
     setErr('');
-    const data = { surname: form.surname.trim(), first_name: form.first_name.trim(), email: form.email.trim(), phone: form.phone || '', role: form.role, password: form.password, permissions: form.permissions };
-    try { await saveStaffUser(data, item.id); onSaved(item.id ? 'User updated.' : 'Staff user created. A welcome email was sent.'); } catch (e) { setErr(e.message); }
+    const data = { surname: form.surname.trim(), first_name: form.first_name.trim(), email: form.email.trim(), phone: form.phone || '', role: form.role, permissions: form.permissions };
+    try { await saveStaffUser(data, item.id); onSaved(item.id ? 'User updated.' : 'Staff role assigned. They get it when they sign in with this email.'); } catch (e) { setErr(e.message); }
   }
 
   return (
@@ -78,9 +78,7 @@ function UserForm({ item, isSelf, onClose, onSaved }) {
         <Field id="u-role" label="Role">
           <select id="u-role" value={form.role} onChange={set('role')} disabled={isSelf}>{STAFF_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}</select>
         </Field>
-        <Field id="u-pass" label={item.id ? 'New password' : 'Temporary password'} hint={item.id ? 'Leave empty to keep the current one.' : 'At least 8 characters.'}>
-          <input id="u-pass" type="text" value={form.password} onChange={set('password')} autoComplete="off" />
-        </Field>
+        <Field id="u-phone" label="Phone (optional)"><input id="u-phone" type="tel" value={form.phone || ''} onChange={set('phone')} /></Field>
       </div>
       <div className="field">
         <label>Permissions</label>
